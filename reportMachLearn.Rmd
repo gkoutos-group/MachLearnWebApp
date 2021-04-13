@@ -1,0 +1,120 @@
+---
+title: "Machine Learning for Biomarker Discovery"
+author: "Laura Bravo Merodio"
+output: 
+  html_document:
+    #theme: sandstone
+    theme: lumen
+    #code_folding: "hide"
+    number_sections: TRUE
+    toc: true
+    toc_float:
+        collapsed: true
+        smooth_scroll: true
+    toc_depth: 3
+    fig_caption: yes
+    code_folding: show
+
+fontsize: 14pt
+---
+
+```{r setup, include=FALSE}
+
+#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+```
+
+
+# Introduction
+
+This is a report that summarizes the main results from the research, including plots and tables. It is set so as to mimic the analysis pipeline undergone in the app.
+
+***
+***
+
+# Data exploration 
+
+Your data looks like this: 
+
+```{r Desc, fig.height=10, fig.width=12}
+plot1()
+```
+
+# Feature Selection
+
+
+```{r plot3, fig.height=10, fig.width=10}
+
+FeatSel2()
+
+```
+
+The chosen features are: 
+
+```{r plot7, fig.height=10, fig.width=10}
+
+KeyFeats() %>%
+  #rename(" " = "x") %>%
+  kbl(caption = "Selected Features") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  #kable(., digits = 2, format.args = list(scientific = FALSE))
+
+
+```
+
+Given this ranking table 
+
+```{r}
+
+FinalFS2() %>%
+  kbl(caption = "Selected Features") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  #kable(., digits = 2, format.args = list(scientific = FALSE))
+
+```
+
+
+# Model building
+
+Then model building with the selected parameters: Models: `r SelMods()` and Bootstraps: `r Boost()` of the following models 
+
+```{r plot8, fig.height=10, fig.width=10}
+
+Variables() %>%
+  kbl(caption = "Variables") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  #kable(., digits = 2, format.args = list(scientific = FALSE))
+
+```
+
+# Results
+
+```{r plot2, fig.height=10, fig.width=10}
+
+ FinalFinalPlot2()
+
+```
+
+
+```{r plot1, fig.height=5, fig.width=10}
+
+
+FinalFinalPlot()
+
+
+```
+
+
+With top selected models being: 
+
+```{r plot6, fig.height=10, fig.width=10}
+
+q3A() %>%
+  kbl(caption = "Selected Features") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  #kable(., digits = 2, format.args = list(scientific = FALSE))
+
+```
+
+
