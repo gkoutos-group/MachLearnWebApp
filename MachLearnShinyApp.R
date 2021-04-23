@@ -13,7 +13,8 @@
 
 #some issues with rlang?
 
-require(rmarkdown)
+require(knitr) ##added this (not in Bluebear)
+require(rmarkdown) ##added this (not in Bluebear)
 require(shiny)
 require(shinydashboard)
 require(shinyWidgets)
