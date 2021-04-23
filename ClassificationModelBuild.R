@@ -1,47 +1,5 @@
 
 
-#source("GeneralFSMachLearnClass.R")
-#source("GeneralFSMachLearnReg.R")
-
-
-Plot2A <- function(FinalData){
-  
-  #FinalData <- data.frame(x = c("a", "b", "a"), Label = c("Yes", "No", "No"), one = c(1:3))
-  #getDataInsight(FinalData)
-  
-  Label <- data.frame(Label=FinalData$Label) 
-  
-  FinalData <- FinalData %>% 
-    dplyr::select(-Label)
-  
-  FinalDataNumeric <- FinalData %>% 
-    select_if(is.numeric)  %>%
-    add_column(Label) 
-  
-  FinalDataChar <- FinalData  %>%
-    select_if(~!is.numeric(.)) %>% 
-    mutate_if(~!is.character(.), as.character) %>% 
-    add_column(Label) 
-  
-  Model1aPivot <- FinalDataChar %>%  
-    pivot_longer(-Label, names_to = "Features", values_to = "Value")  %>% 
-    group_by(Features) %>%
-    dplyr::count(Value, Label,  sort=TRUE) %>%
-    ungroup %>% 
-    mutate(Value = fct_reorder(Value, n, sum)) 
-  
-  Model2aPivot <- FinalDataNumeric %>%  
-    pivot_longer(-Label, names_to = "Features", values_to = "Value") 
-  
-  Res <- ggplot() + facet_wrap(~ Features, scales = "free") +
-    geom_col(data = Model1aPivot, aes( n, Value, fill = Label)) + 
-    geom_density(data = Model2aPivot, aes(Value, fill = Label), alpha=.5) +
-    labs(title= "Relationship of Variables and Outcome", x = "Number of Patients", y= "Levels of Feature")
-  
-  Res + theme_bw()
-}
-
-
 MergeOutFuns <- function(g1, SelectedModels){
   
   
@@ -89,17 +47,6 @@ MergeOutFuns <- function(g1, SelectedModels){
   
   Basis <- rbindlist(Basis)
   
-  #
-  # detach("package:readr", unload=TRUE) #needed if metric_set does not work well
-  ##detach("package:Metrics", unload=TRUE)
-  #library(yardstick)
-  #detach("package:readr", unload=TRUE)
-  #library(tidyverse)
-  #library(dplyr)
-  #library(rlang)
-  #env_name(fn_env(roc_auc))
-  #> [1] "namespace:readr"
-  #rcompanion
   
   hp.detach("readr")
   #hp.detach("Metrics")
@@ -250,22 +197,6 @@ hp.detach <- function(package_name){
     })
   }
   
-  ## dso_filenames <- dir(tempdir(), pattern = .Platform$dynlib.ext)
-  ## filenames  <- dir(tempdir())
-  ## for (i in seq(dso_filenames)) {
-  ##     if (package_name == dso_filenames[i]) {
-  ##         dyn.unload(file.path(tempdir(), dso_filenames[i]))
-  ##     }
-  ## }
-  ## for (i in seq(filenames)) {
-  ##     if (file.exists(file.path(tempdir(), filenames[i])) &
-  ##         nchar(filenames[i]) < 42) {
-  ##         # some files w/ long filenames that didn't like to be removeed
-  ##         if (package_name == filenames[i]) {
-  ##             file.remove(file.path(tempdir(), filenames[i]))
-  ##         }
-  ##     }
-  ## }
   
 }
 
@@ -273,337 +204,24 @@ label.help <- function(label,id){
   HTML(paste0(label,actionLink(id,label=NULL,icon=icon('question-circle'))))
 }
 
-Plot2 <- function(data){
-  
-  source("COVIDJune2Functions.R")
-  MatrixCorr <- data %>% 
-    select_if(~!is.ordered(.)) %>%
-    mixed_assoc() 
-  
-  MatrixCorr  %>%
-    select(x, y, assoc) %>%
-    spread(y, assoc) %>%
-    column_to_rownames("x") %>%
-    as.matrix %>%
-    as_cordf %>%
-    network_plot( colors= c("red","green"))
-  
-}
 
-
-Plot1 <- function(FinalData){
-  
-  Label <- data.frame(Label=FinalData$Label) 
-  print("here")
-  FinalData <- FinalData %>% 
-    dplyr::select(-Label)
-  
-  FinalDataNumeric <- FinalData %>% 
-    select_if(is.numeric)  %>%
-    add_column(Label) 
-  
-  FinalDataChar <- FinalData  %>%
-    select_if(~!is.numeric(.)) %>% 
-    mutate_if(~!is.character(.), as.character) %>% 
-    add_column(Label)
-  print("here2")
-  
-  Model2aPivot <- FinalDataNumeric %>% 
-    pivot_longer(  -Label, names_to = "Features", values_to = "Value")
-  print("here5")
-  
-  NumPlots <-  Model2aPivot %>% 
-    ggplot(aes( Value, fill = Label)) +
-    geom_density(alpha=.5)+ facet_wrap(~ Features, scales = "free") +
-    labs(title= "Relationship of Variables and Outcome", x = "Density", y= "Value")
-  
-  if (dim(FinalDataChar)[2] != 1){
-    
-    Model1aPivot <- FinalDataChar %>%  
-      pivot_longer(-Label, names_to = "Features", values_to = "Value")
-    
-    CharPlots <-  Model1aPivot %>% 
-      group_by(Features) %>%
-      count(Value, Label,  sort=TRUE) %>%
-      ungroup %>% 
-      mutate(Value = fct_reorder(Value, n, sum)) %>%
-      ggplot(aes( n, Value, fill = Label)) +
-      geom_col()+ facet_wrap(~ Features, scales = "free") +
-      labs(title= "Relationship of Variables and Outcome", x = "Number of Patients", y= "Levels of Feature")
-    
-    return(CharPlots/NumPlots)} else{
-      
-    }
-  return(NumPlots)
-  
-}
-
-
-FeatureSelection3 <- function(data){
-  
-  NumCols <- dim(data)[2]
- 
-   if (NumCols > 20) {
-    
-    NumCols <- 20
-
-  } else {
-    
-    NumCols <- NumCols
-    
-  }
-  
- # PreProcL <- recipe(Label ~ . , data = data) %>%
- #   step_downsample(Label, seed = 132, under_ratio = 2) %>%
- #   step_normalize(all_numeric()) %>%
- #   step_dummy(all_nominal(),-all_outcomes(), one_hot = TRUE) %>%
- #   step_interact(terms = ~ all_predictors() * all_predictors()) %>%
- #   step_nzv(all_predictors()) %>%
- #   step_corr(all_predictors()) %>%
- #   step_lincomb(all_predictors())
-  
-  
-  PreProcL2 <- recipe(Label ~ . , data = data) %>%
-    step_downsample(Label, seed = 132, under_ratio = 2) %>%
-    step_normalize(all_numeric()) %>%
-    step_dummy(all_nominal(),-all_outcomes(), one_hot = TRUE) %>%
-    #step_interact(terms = ~ all_predictors() * all_predictors()) %>%
-    step_nzv(all_predictors()) #%>%
-  #step_corr(all_predictors()) %>%
-  #step_lincomb(all_predictors())
-  
-  
-  
-  PreProcRF <- recipe(Label ~ . , data = data) %>%
-    step_downsample(Label, seed = 132, under_ratio = 2) %>%
-    step_normalize(all_numeric()) %>%
-    #step_dummy(all_nominal(), -all_outcomes(), one_hot = TRUE) %>%
-    #step_interact(terms = ~ all_predictors() * all_predictors()) %>%
-    step_nzv(all_predictors()) #%>%
-  #step_corr(all_predictors()) %>%
-  #step_lincomb(all_predictors())
-  
-
-  ################# Modeling and parameter setting 
-  
-  set.seed(132)
-  office_bootLASSO <- bootstraps(data, strata = Label, times = 10)
-  set.seed(132)
-  office_bootRF <- bootstraps(data, strata = Label, times = 5)
-  
- # tune_spec <-
- #   logistic_reg(mode = "classification",
- #                penalty = tune(),
- #                mixture = 1) %>%
- #   set_engine("glmnet")
-  
-  tune_spec2 <-
-    logistic_reg(mode = "classification",
-                 penalty = tune(),
-                 mixture = 0.5) %>%
-    set_engine("glmnet")
-  
-  lambda_grid <- grid_regular(penalty(), levels = 30)
-  
- #lasso_wflow <- workflow() %>%
- #  add_recipe(PreProcL) %>%
- #  add_model(tune_spec)
-  
-  lasso_wflow2 <- workflow() %>%
-    add_recipe(PreProcL2) %>%
-    add_model(tune_spec2)
-  
-  RF_tune_spec <-
-    rand_forest(mode = "classification",
-                trees = tune(),
-                min_n = tune()) %>%
-    set_engine("ranger", importance = "impurity")
-  #set_engine("randomForest", importance = "")
-  
-  
-  rf_workflow <- workflow() %>%
-    add_recipe(PreProcRF) %>%
-    add_model(RF_tune_spec)
-  
-  set.seed(132)
-  rf_grid <-  grid_regular(parameters(RF_tune_spec), levels = 3)
-  
-  
-  #wf <- list(lasso_wflow, rf_workflow, lasso_wflow2)
-  #grid <- list(lambda_grid, rf_grid, lambda_grid)
-  #boost <- list(office_bootLASSO, office_bootRF, office_bootLASSO)
-  
-  wf <- list(rf_workflow, lasso_wflow2)
-  grid <- list(rf_grid, lambda_grid)
-  boost <- list(office_bootRF, office_bootLASSO)
-  
-  metrics <- metric_set(roc_auc)
-  
-  iter_parallel2 <- function(i)  {
-    
-    print(i)
-    set.seed(132)
-    Dome <- tune_grid(
-      wf[[i]],
-      resamples = boost[[i]],
-      grid = grid[[i]],
-      metrics = metrics
-    )
-    
-    print("tune done")
-    
-    return (Dome)
-  }
-  
- jobid <- future_lapply(
-   seq_along(1:2), 
-   function(i) {
-     iter_parallel2(i)
-   }
-   , future.seed = TRUE)
-
- RFLASSO  <- jobid
- 
- best_params <- RFLASSO %>%
-   map(select_best, metric = "roc_auc") #  maximize = FALSE
- 
- FinWork <- map2(.x = wf, .y = best_params, ~ finalize_workflow(.x, .y))
- 
- FinWorkFeatures <- map(.x = FinWork, ~ pull_workflow_fit(fit(.x, data)))
- 
- rankFilt <- 7
-
-    # Get feature importance LASSO
- 
- #  s <- FinWorkFeatures[[1]] %>% 
- #    vi(lambda = best_params[[1]]$penalty) %>%
- #    mutate(Importance = abs(Importance),
- #           Variable = fct_reorder(Variable, Importance))
- #  
- #  s <- s %>% 
- #    mutate(rank = dense_rank(desc(Importance))) %>% 
- #    mutate(Model = "LASSO") %>% 
- #    select(Sign, Variable, Importance, rank, Model) 
- #  
- #  p <- s
- # 
- #  PlotLASSO <-  p %>%
- #    mutate(rank = dense_rank(desc(Importance))) %>% 
- #    filter(rank < NumCols) %>%
- #    ggplot(aes(x = Importance, y = reorder(Variable, Importance), fill = Sign)) +
- #    geom_col() +
- #    scale_x_continuous(expand = c(0, 0)) + 
- #    labs(subtitle =  "Glmnet: LASSO and Interactions") + 
- #    xlab("Importance") + 
- #    ylab("Variable") +
- #    theme_light() + 
- #    scale_fill_manual(
- #      name = "Sign",
- #      values = c('springgreen3', 'red3'),
- #      labels = c("Low Risk", "High Risk")
- #    ) + 
- #    theme(text = element_text(size=8))
- #  
-   #Lasso 2
-   
-   s2 <- FinWorkFeatures[[2]] %>% 
-     vi(lambda = best_params[[2]]$penalty) %>%
-     mutate(Importance = abs(Importance),
-            Variable = fct_reorder(Variable, Importance))
-   
-   s2 <- s2 %>% 
-     mutate(rank = dense_rank(desc(Importance))) %>% 
-     mutate(Model = "LASSOEN") %>% 
-     select(Sign, Variable, Importance, rank, Model)
-   
-   p2 <- s2
-  
-   
-   PlotLASSO2 <-  p2 %>%
-     mutate(rank = dense_rank(desc((Importance)))) %>% 
-     filter(rank < NumCols) %>%
-     ggplot(aes(x = Importance, y = reorder(Variable, Importance), fill = Sign)) +
-     geom_col() +
-     scale_x_continuous(expand = c(0, 0)) + 
-     labs(subtitle =  "Glmnet: EN") + 
-     xlab("Importance") + 
-     ylab("Variable") +
-     theme_light() + 
-     scale_fill_manual(
-       name = "Sign",
-       values = c('springgreen3', 'red3'),
-       labels = c("Low Risk", "High Risk")
-     ) + 
-     theme(text = element_text(size=8))
-   
-   
-   # Get feature importance RF
-   
-   qF <- FinWorkFeatures[[1]]$fit$variable.importance %>%
-     enframe("Variable", "Importance")
-   
-   pqF <- qF
-   
-   
-   PlotRF <- pqF %>%
-     mutate(rank = dense_rank(desc(Importance))) %>% 
-     filter(rank < NumCols) %>%
-     ggplot(aes(x = reorder(Variable, Importance), y = Importance)) +
-     geom_col() +
-     coord_flip() +
-     scale_fill_viridis_d(end = .7) +
-     labs(subtitle =  "Random Forest: Ranger") + 
-     xlab("Variables") + 
-     ylab("Importance") + theme_light() 
-   
-   qF <- qF %>% 
-     mutate(rank = dense_rank(desc(Importance))) %>% 
-     mutate(Model = "RF")
-   
-   #Merge both LASSO and RF
-   
-   #FinalFS1 <- rbind(s %>% select(-Sign), qF)
-   FinalFS1 <- rbind(s2 %>% select(-Sign), qF)
-   #FinalFS1 <- rbind(s2 %>% select(-Sign), FinalFS1)
-   FinalFS <- FinalFS1 %>% 
-     filter(rank <= rankFilt) %>%
-     mutate(rankMod = paste0(rank, "-", Model))
-   
-   
-   FinalFS2 <- FinalFS  %>% 
-     separate(Variable, c("first", "second", "third","fourth"), sep="_" ) %>%
-     select(c(1, 4, 6,7,8))
-   
-   #FinalFS2 <- FinalFS2 %>%
-   #  filter(Model != "LASSO")
-   
-   FinalFS2 <- rbind(FinalFS2[,c(1,3,4, 5)], data.frame(first = FinalFS2$fourth, rank = FinalFS2$rank, Model = FinalFS2$Model, rankMod = FinalFS2$rankMod)) %>%
-     na.omit() %>%
-     add_count(first) %>%
-     #filter(Model != "LASSO") %>%
-     arrange(desc(n), rank) %>%
-     rename('Variable Name' = first) %>%
-     rename('Freq of appearance' = n) %>%
-     rename('Top rank in model' = rankMod) %>%
-     select(-c(rank, Model))
-   
-   FinalFS2 <- FinalFS2[!duplicated(FinalFS2$'Variable Name'), ] 
-   
-   PlotLASSO <- list()
-   return(list(FinalFS2, PlotRF, PlotLASSO, PlotLASSO2))
-   #return(list(FinalFS2, PlotRF, PlotLASSO2))
-  
-  
-  #return(list(PlotLASSO,PlotRF, FinalFS1))
-}
-
-# The idea is to place a spinner image in the same container as the plot
-# and center it, but give it a below-default z-index
-# Whenever the plot is recalculting, make the plot's z-index even lower
-# so that the spinner will show
 
 Conditional <-  function( data ) {
   
+  y_is_discrete <- is_discrete(data$Label)
+  y_is_binary <- is_binary(data$Label)
+  
+  mode <-
+    case_when(
+      y_is_discrete | y_is_binary ~ 'classification',
+      TRUE ~ 'regression'
+    )
+  
+  #if something with g1 that automatically detects regression or classification
+  
+  if (mode == 'classification'){
+    
+
   NumStrat <- data.frame(table(data$Label))
   NumPats <- dim(data)[1]
   
@@ -626,6 +244,14 @@ Conditional <-  function( data ) {
     
   }
   
+  } else{
+    
+    print("No disbalance")
+    Disbalance <- 1
+    
+  }
+  
+  
   #Type
   
   #delete ordered factors
@@ -636,16 +262,16 @@ Conditional <-  function( data ) {
   
   Type <- data.frame(table(sapply(data, class)))
   
-  if (Type$Freq[1] < 2){
-    print("No factor vars")
-    Dummy <- 1
-    
-  } else{
+  if (any(Type$Var1 == "factor")){
     print("Factor vars")
     Dummy <- 2
+    
+  } else{
+    print("No Factor vars")
+    Dummy <- 1
   }
   
-  if (!is.na(Type$Freq[2])){
+  if (any(Type$Var1 == "numeric")){
     print("Numeric vars")
     Normalize <- 2
     
@@ -663,6 +289,8 @@ Conditional <-  function( data ) {
     print("Interactions included")
     Interact <- 2
   }
+  
+
   
   data.frame(Disbalance, Dummy, Normalize, Interact)
   
@@ -926,50 +554,7 @@ iter_parallelFinal <- function(i, data, hh,method,Bootstraps,SelectedModels)  {
 }
 
 
-################################
 
-
-Plot1aC <- function(FinalData) {
-  
-  Label <- data.frame(Label = FinalData$Label)
-  
-  FinalData <- FinalData %>%
-    dplyr::select(-Label)
-  
-  FinalDataNumeric <- FinalData %>%
-    select_if(is.numeric)  %>%
-    add_column(Label)
-  
-  FinalDataChar <- FinalData  %>%
-    select_if( ~ !is.numeric(.)) %>%
-    mutate_if( ~ !is.character(.), as.character) %>%
-    add_column(Label)
-  
-  Model1aPivot <- FinalDataChar %>%
-    
-    pivot_longer(-Label, names_to = "Features", values_to = "Value")
-  
-  cols <-
-    c(
-      "DD" = "red3",
-      "DA" = "darkseagreen1",
-      "AD" = "coral1",
-      "AA" = "forestgreen"
-    )
-  
-  CharPlots <-  Model1aPivot %>%
-    group_by(Features) %>%
-    count(Value, Label,  sort = TRUE) %>%
-    ungroup %>%
-    mutate(Value = fct_reorder(Value, n, sum)) %>%
-    ggplot(aes(n, Value, fill = Label)) +
-    geom_col(aes(colour = "black")) + facet_wrap( ~ Features, scales = "free") +
-    labs(title = "Relationship of Variables and Outcome", x = "Number of Patients", y = "Levels of Feature") + scale_colour_manual(values = cols,
-                                                                                                                                   aesthetics = c("fill")) + guides(colour =
-                                                                                                                                                                      FALSE)
-  
-  return(CharPlots)
-}
 
 
 

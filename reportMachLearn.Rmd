@@ -1,34 +1,44 @@
 ---
 title: "Machine Learning for Biomarker Discovery"
+address: "Institute of Translational Medicine, University of Birmingham, UK"
 author: "Laura Bravo Merodio"
+date: "`r format(Sys.time(), '%B %Y')`"
+www: gkoutos.github.io
+email: "lxb732@student.bham.ac.uk"
+github: InFlam
 output: 
   html_document:
+    number_sections: true
+#output: 
+#  html_document:
+    #df_print: paged
     #theme: sandstone
-    theme: lumen
+    #theme: lumen
     #code_folding: "hide"
-    number_sections: TRUE
-    toc: true
-    toc_float:
-        collapsed: true
-        smooth_scroll: true
-    toc_depth: 3
-    fig_caption: yes
-    code_folding: show
-
-fontsize: 14pt
+#    number_sections: TRUE
+#    toc: true
+    #toc_float:
+        #collapsed: true
+       # smooth_scroll: true
+    #toc_depth: 3
+    #fig_width: 7
+    #fig_height: 6
+    #fig_caption: true
+    #code_folding: show
+    #css: styles.css
+#fontsize: 14pt
 ---
 
 ```{r setup, include=FALSE}
 
 #knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE,fig.pos = "H") 
 
 ```
 
-
 # Introduction
 
-This is a report that summarizes the main results from the research, including plots and tables. It is set so as to mimic the analysis pipeline undergone in the app.
+This is a report that summarizes the main results from the app, including plots and tables. It follows the steps from the analysis.
 
 ***
 ***
@@ -41,8 +51,9 @@ Your data looks like this:
 plot1()
 ```
 
-# Feature Selection
+The analysis is going to be a ** `r Names2()` ** analysis
 
+# Feature Selection
 
 ```{r plot3, fig.height=10, fig.width=10}
 
@@ -50,7 +61,7 @@ FeatSel2()
 
 ```
 
-The chosen features are: 
+The chosen features are: `r KeyFeats()` 
 
 ```{r plot7, fig.height=10, fig.width=10}
 

@@ -33,6 +33,7 @@ require(plotly)
 require(patchwork)
 require(doFuture)
 require(gridExtra)
+require(DescTools)
 
 #########
 require(magrittr)
@@ -47,8 +48,10 @@ require(ranger)
 
 # Functions ---------------------------------------------------------------
 
-source("FunsPipeline14MachLearn.R")
-source("TrialFS.R")
+source("Plots_Extra.R")
+source("ClassificationModelBuild.R")
+source("FeatureSelection.R")
+source("RegressionModelBuild.R")
 .seed <- 42L 
 set.seed(.seed)
 
@@ -67,7 +70,7 @@ require(kableExtra)
 
 registerDoFuture()
 plan(multiprocess, workers = availableCores())
-
+#future:::ClusterRegistry("stop")
 
 ############
 
@@ -219,25 +222,29 @@ plan(multiprocess, workers = availableCores())
 ui = shinyUI(
   #  ui <- 
   dashboardPage( skin ="red", 
-                 dashboardHeader(title = "Machine Learning for Biomarker Discovery"),
+                 dashboardHeader(title = "ML for Biomarker Discovery"),
                  dashboardSidebar(
                    sidebarMenu(
                      menuItem("How it works", tabName = "works"),
                      menuItem("0. Setup", tabName = "setup"),
                      menuItem("6. Visualization", tabName = "vis"), #icon("chart-pie")),
                      menuItem("7. Feature Selection", tabName = "fs"), #icon("filter")),
-                     menuItem("8. Model Training", tabName = "MT")) ##icon("brain"))) 
+                     menuItem("8. Model Training", tabName = "MT")),
+                   actionButton("refresh", "Refresh", class = "btn-warning")##icon("brain"))) 
                  ),
                  dashboardBody(
+                   tags$head(tags$style(
+                     HTML('.wrapper {height: auto !important; position:relative; overflow-x:hidden; overflow-y:hidden}')
+                   )),
                    uiOutput("AllFs"),
                    tabItems(
                      tabItem("works",
                              
                              fluidPage(
                                titlePanel("Objective"),
-                               tags$h4("This app allows for the analysis of binary classification, through a three step approach. First it allows the user to explore the dataset and
+                               tags$h4("This app allows for the analysis of binary classification and regression, through a three step approach. First it allows the user to explore the dataset and
                                           choose the outcome label, followed by simple visualizations. Then feature selection allows to create a better understanding of the most highly associated variables with the outcome of choice. Finally
-                                          the top 4 features are then modeled through algorithms of choice. A report with all results can then be downloaded at the end."),
+                                          the top 2-5 features are then modeled through algorithms of choice. A report with all results can then be downloaded at the end."),
                                hr(), 
                                titlePanel("Instructions"),
                                tags$h4("Follow the numbers and instructions in the boxes and watch video below for a general example."),
@@ -251,7 +258,7 @@ ui = shinyUI(
                              )
                      ),
                      tabItem("setup",
-                             
+                             fluidRow(
                              box(width = 4, title = '1. Input Dataset',solidHeader = T,status = 'primary',
                                  helpText("Choose already loaded datasets shown in paper, or upload your own dataset"),
                                  hr(),
@@ -266,7 +273,7 @@ ui = shinyUI(
                              
                              box(width =4, title = '2. Explore variables/columns', solidHeader = T,status = 'primary',
                                  uiOutput("columns_to_analyze"),
-                                 helpText("Choose the column that is going to be the outcome variable. It has to be a binary variable to continue the analysis"),
+                                 helpText("Choose the column that is going to be the outcome variable. It has to be a binary variable or numeric to continue the analysis"),
                                  hr(),
                                  plotlyOutput("data_tab2_summary_plot",height = 200) %>% 
                                    withSpinner(color="#0dc5c1"),
@@ -274,7 +281,7 @@ ui = shinyUI(
                              ), 
                              
                              box(width = 4, title = "3. Select/change the outcome variable", "Please select your dependent variable in the dropdown list of box 2, its name will change to 'Label'.", 
-                                 " \n WARNING: It has to be a binary variable (factor) as we are performing binary classification",solidHeader = T,status = 'primary', hr(), 
+                                 " \n WARNING: It has to be either a binary variable (factor) or a numeric value",solidHeader = T,status = 'primary', hr(), 
                                  actionButton("load", "4. Select as outcome"),
                                  hr(), 
                                  DTOutput("tbl2")),
@@ -284,8 +291,10 @@ ui = shinyUI(
                                  htmlOutput("ibox") %>% 
                                    withSpinner(color="#0dc5c1")) 
                              #downloadButton('downloadData')
+                     )
                      ),
                      tabItem(tabName = "vis",
+                             fluidRow(
                              uiOutput("about_data"),
                              
                              box( width = 7, title = "Variables stratified by outcome (i.e Label)", solidHeader = T,status = 'primary', 
@@ -299,29 +308,32 @@ ui = shinyUI(
                                     withSpinner(color="#0dc5c1")
                              )
                              #downloadButton('downloadVis')
-                             
+                             )
                      ),
                      tabItem(tabName = "fs",   
-                             
+                             fluidRow(
                              box(title = "Feature Selection", solidHeader = T,status = 'primary', 
                                  
-                                 plotOutput("FeatSel2", height = 680, width = 600) %>% 
+                                 plotOutput("FeatSel2", height = 750, width = 600) %>% 
                                    withSpinner(color="#0dc5c1"), 
                                  hr(),
-                                 helpText("Feature selection performed by applying both random forest and elastic net and assesing feature importance through ranger and vip packages"),
-                                 sliderInput("ThreshGrid", "Select Threshold: ",min=1, max=15, value=10, step=2),
+                                 helpText("Feature selection performed by applying 4 different algorithms with 4 different feature importance measurements, adapted from (https://www.r-bloggers.com/2020/07/comparing-variable-importance-functions-for-modeling/)"),
+                                 #sliderInput("ThreshGrid", "Select Threshold: ",min=1, max=15, value=10, step=2) #,
                              ),
                              verbatimTextOutput("text"),
                              #verbatimTextOutput("What"),
                              
                              box( title = "Feature Ranking (top 5) ", solidHeader = T,status = 'primary', 
                                   
-                                  helpText("Ranking created by combining both raking in model and if appeared in both or with different interactions (if used)"),
+                                  helpText("Ranking created by assessing al feature importance rankings"),
                                   hr(),
                                   DTOutput("tbl3")), 
                              box(title = 'Selected Features',  background = "light-blue",
-                                 uiOutput("SelF"))
+                                 uiOutput("SelF")),
+                             box( width = 3, height = 1,
+                                 sliderInput("featsel", "Select Features: ",min=2, max=5, value=4, step=1))
                              #downloadButton('downloadFs')
+                             )
                      ),
                      
                      tabItem(tabName = "MT",
@@ -353,13 +365,13 @@ ui = shinyUI(
                                
                                box(
                                  title = 'Results Model Training',solidHeader = T,status = 'primary',
-                                 helpText("Runs equate to a different combination of parameters. Each of these runs are modelled through the algorithms of choice."),
+                                 helpText("Runs equate to a different combination of parameters. Each of these runs are modelled through the algorithms of choice.Performance is assessed as AUC for binary classification and RMSE for regression."),
                                  hr(),
                                  DTOutput("FinalFinal"), 
                                  DTOutput("Variables"))
                              ),
                              fluidRow(
-                               box(title = 'AUROC values by model and feature',width =12, status = 'warning',
+                               box(title = 'Performance value by model and feature',width =12, status = 'warning',
                                    plotOutput("FinalFinalPlot2") %>% 
                                      withSpinner(color="#0dc5c1"),
                                    plotOutput("FinalFinalPlot") %>% 
@@ -383,6 +395,28 @@ ui = shinyUI(
 # Server ------------------------------------------------------------------
 
 server = shinyServer(function( input, output,session) {
+  
+ # observeEvent(input$refresh, {
+  #  refresh()
+  #})
+  
+  observeEvent(input$refresh,{
+    aggg_result = -1
+    if(aggg_result == -1)
+    {
+      session$reload()
+      return()
+      print("session reload not working")
+    }
+    
+    print("Code running this line")
+    
+    output$code_ran <- renderText("code Ran this line without refreshing")
+    
+  })
+  
+  
+  
   
   #  output$pdfviewer <- renderText({
   #    return(paste('<iframe style="height:600px; width:100%" src="', "/rds/homes/l/lxb732/Pipeline2/ApplicationNoteBioinformatics2.pdf", '"></iframe>', sep = ""))
@@ -533,21 +567,33 @@ server = shinyServer(function( input, output,session) {
   })
   
   
-  Names <- reactive({
-    
-    if (!is.null(input$data)){
-      print("Inflammation")
-      print(input$data)
-      Names <- names(datasets[input$data])
-    } else if (!is.null(input$example_data)){
-      
-      print("NO Inflammation")
-      Names <- input$example_data
-      
-      
-    } else {
-      Names <- "User data"
-    }
+  
+
+  
+  
+  
+  
+  Names = reactive({
+  
+  r1 <- input$cols_to_analyze
+  print(r1)
+  y <- readFile()[, r1]
+  y_is_discrete <- is_discrete(y)
+  print(y_is_discrete)
+  y_is_binary <- is_binary(y)
+  print(y_is_binary)
+  mode <-
+    case_when(
+      y_is_discrete | y_is_binary ~ 'Classification',
+      #y_is_binary ~ 'Classification',
+      TRUE ~ 'Regression'
+    )
+  
+  #if something with g1 that automatically detects regression or classification
+  
+  print(mode)
+  mode
+  
     
   })
   
@@ -557,9 +603,9 @@ server = shinyServer(function( input, output,session) {
     x <- initial_analysis()
     
     box(
-      title = "Dataset", 
+      title = "Dataset Info", 
       width = 12,
-      infoBox(title = "Name", 
+      infoBox(title = "Type of analysis", 
               value =  Names(), 
       ),
       infoBox(title = "Dimension", 
@@ -571,6 +617,11 @@ server = shinyServer(function( input, output,session) {
     )
     
   })
+  
+  
+  Names2 <- function(){
+    Names()
+  }
   
   
   output$columns_to_analyze <- renderUI({
@@ -638,24 +689,34 @@ server = shinyServer(function( input, output,session) {
   
   # Feature Selection -------------------------------------------------------
   
-  
-  
   Data2 <- eventReactive({input$load},{
     # Data2 <- eventReactive({input$cols_to_analyze},{
     r1 <- input$cols_to_analyze
     if ((is.factor(readFile()[, r1]))) {
+      
+      if (length(levels(as.factor(readFile()[, r1]))) > 2){
+        Data2 <- readFile()
+        showNotification("Need to pick a binary factor or numeric column! Please Refresh", type= "error", closeButton = TRUE, duration = NULL)
+        
+      }else{
+      
+      Data2 <- readFile() %>% 
+        rename(Label = input$cols_to_analyze)  %>%
+        drop_na() #added this!
+      
+      } 
+    }else{
+   
       Data2 <- readFile() %>% 
         rename(Label = input$cols_to_analyze)  %>%
         drop_na() #added this!
       
       
-    }else{
-      Data2 <- readFile()
-      showNotification("Need to pick a factor column: Do not proceed until preprocessing steps in preprocessing box are disclosed", type= "error", closeButton = TRUE, duration = NULL)
-    }
+      }
     
     return(Data2)
   })
+  
   
   
   
@@ -677,10 +738,10 @@ server = shinyServer(function( input, output,session) {
   )
   
   
-  
   plot1 <- function(){
     Plot2A(Data2())
-  } 
+  
+    } 
   
   
   selectedFeaturesA <- reactiveValues(
@@ -694,7 +755,24 @@ server = shinyServer(function( input, output,session) {
     observeEvent(input$dynamic, {
       #showModal(modalDialog("Doing a function WHAAAATTT", footer=NULL))
       output$plot1 <- renderPlot({ 
-        Plot2A(Data2())
+        
+        y_is_discrete <- is_discrete(Data2()$Label)
+        y_is_binary <- is_binary(Data2()$Label)
+        
+        mode <-
+          case_when(
+            y_is_discrete | y_is_binary ~ 'classification',
+            TRUE ~ 'regression'
+          )
+        
+        #if something with g1 that automatically detects regression or classification
+        
+        if (mode == 'classification'){
+        
+        Plot2A(Data2())} else{
+          Plot2A(Data2())
+        }
+       
       })
       output$plot2 <- renderPlot({ 
         res <- getDataInsight((Data2()))
@@ -703,7 +781,7 @@ server = shinyServer(function( input, output,session) {
       
       observe({
         #selectedFeaturesA$data <- FeatureSelection3a(Data2()) ##
-        selectedFeaturesA$data <- FeatureSelection3a(Data2(), "Label","C", input$ThreshGrid) #####
+        selectedFeaturesA$data <- FeatureSelection3a(Data2(), "Label","C", 10) #####before it was input
         #selectedFeaturesA$data <- readRDS("FeatureSelection.rds")
         #return(FSFinal)
         
@@ -761,13 +839,10 @@ server = shinyServer(function( input, output,session) {
     
     selectedFeaturesA$data[[2]]
     
-    
-
    
   }
   
-  
-  
+
   
   output$FeatSel2 <- renderPlot(
     
@@ -780,10 +855,11 @@ server = shinyServer(function( input, output,session) {
     
     KeyFeats1 <- unique(str_extract(as.character(FinalFS2()$`Variable Name`), "[^_]+"))
     
-    if (length(KeyFeats1) <= 4){
+    
+    if (length(KeyFeats1) <= input$featsel){ #4
       KeyFeats <- KeyFeats1[1:length(KeyFeats1)]
     }else{
-      KeyFeats <- KeyFeats1[1:4]
+      KeyFeats <- KeyFeats1[1:input$featsel]
     }
     
   })
@@ -798,7 +874,7 @@ server = shinyServer(function( input, output,session) {
                       infoBox(
                         paste0(Text[coln]),
                         #icon = icon("tick"),
-                        width = 5,  color = "blue", fill = TRUE
+                        width = 5,   color = "blue", fill = TRUE
                       )
                     })
     return(info2)
@@ -837,7 +913,31 @@ server = shinyServer(function( input, output,session) {
     data <- Data2()
     print("runningHey2")
     #c(1,2)
+    
+    y_is_discrete <- is_discrete(data$Label)
+    y_is_binary <- is_binary(data$Label)
+    
+    mode <-
+      case_when(
+        y_is_discrete | y_is_binary ~ 'classification',
+        TRUE ~ 'regression'
+      )
+    
+    #if something with g1 that automatically detects regression or classification
+    
+    if (mode == 'classification'){
+    
     FurrDat2 <- furrr::future_map(.x= c(1:length(FeaturesS)), ~iter_parallelFinal(.x, data, FeaturesS,1,Boosted,Alg))
+    
+    print("classificationFinalFinal3")
+    } else{
+      
+      FurrDat2 <- furrr::future_map(.x= c(1:length(FeaturesS)), ~iter_parallelFinalReg(.x, data, FeaturesS,1,Boosted,Alg))
+      
+      
+    }
+    
+    FurrDat2
     
     #FurrDat2 <- readRDS("ModelTest.RDS")
   })
@@ -852,6 +952,8 @@ server = shinyServer(function( input, output,session) {
     g <- FinalFinal3()
     #g1 <-FurrDat2
     
+    print(length(g))
+    print(length(g[[1]]))
     print("Models run 2!")
     
     if (length(which(lapply(g, is.null) == T)) != 0) {
@@ -865,8 +967,38 @@ server = shinyServer(function( input, output,session) {
       
     }
     
-    MergeOut <- MergeOutFuns(g1, SelectedModels)
     
+    print("Here is the problem")
+    y <- g1[[1]][[1]][[2]][[1]][["truth"]]
+    y_is_discrete <- is_discrete(y)
+    y_is_binary <- is_binary(y)
+    
+    mode <-
+      case_when(
+        y_is_discrete | y_is_binary ~ 'classification',
+        TRUE ~ 'regression'
+      )
+    
+    print("Models run 3!")
+    
+    #if something with g1 that automatically detects regression or classification
+    
+    #mode <-  'classification'
+    
+    if (mode == 'classification'){
+      
+      print("classification Merge")
+    
+    MergeOut <- MergeOutFuns(g1, SelectedModels)
+    } else { 
+      
+      print("regression Merge")
+      
+    MergeOut <-  MergeFunsReg(g1, SelectedModels)
+      
+      }
+    
+    MergeOut
   }
   )
   
@@ -894,11 +1026,23 @@ server = shinyServer(function( input, output,session) {
   
   q3A <- reactive({
     
+    if ( "rmse" %in% MergeOut()$Metrics) {
+    
     q3 <- MergeOut() %>%
-      filter(Type == "Test", Metrics == "AUROC") %>%
+      filter(Type == "Test", Metrics == "rmse") %>%
       select(-c(.metric, Type, ModelFinal)) %>%
       arrange(desc(Mean)) %>%
       mutate_if(is.numeric, ~ round(., 3))
+    } else {
+      
+      print("Plotting class")
+      q3 <- MergeOut() %>%
+        filter(Type == "Test", Metrics == "AUROC") %>%
+        select(-c(.metric, Type, ModelFinal)) %>%
+        arrange(desc(Mean)) %>%
+        mutate_if(is.numeric, ~ round(., 3))
+      
+    }
     
     q3A <- inner_join(q3, Variables()) %>%
       arrange(desc(Mean)) %>%
@@ -989,7 +1133,7 @@ server = shinyServer(function( input, output,session) {
         filter(.,Model == i) %>%
         ggplot( aes(reorder(New, Mean), b)) + 
         geom_tile(aes(fill = Mean),colour = "black",  width = 1, height = 0.00001) +   
-        scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean AUC", n.breaks = 8) + 
+        scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean Metric", n.breaks = 8) + 
         facet_grid(NumVars~b, scales="free", space="free") +
         theme_linedraw() + 
         theme(axis.text = element_text(size = 10), 
@@ -1063,11 +1207,11 @@ server = shinyServer(function( input, output,session) {
                       position = position_dodge(width = 0.8),
                       size = 0.6) +
       facet_grid(Metrics ~ ., scales = "free") +
-      scale_y_continuous(
-        labels = scales::percent,
-        breaks = seq(0, 1, 0.1),
-        expand = c(0, 0)
-      ) +
+     # scale_y_continuous(
+     #   labels = scales::percent,
+     #   breaks = seq(0, 1, 0.1),
+     #   expand = c(0, 0)
+     # ) +
       scale_x_continuous(breaks = seq(0, max(MergeOut()$Run) + 2, 1), expand = c(0, 0)) +
       labs(title = paste0("Bootstraps n=",  input$Boost)) +
       theme(text = element_text(size = 12)) + theme(

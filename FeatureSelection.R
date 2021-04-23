@@ -1,3 +1,10 @@
+
+#Obtained from: https://www.r-bloggers.com/2020/07/comparing-variable-importance-functions-for-modeling/
+
+
+.seed <- 42L
+set.seed(.seed)
+
 .engines_valid <- c('glm', 'glmnet', 'xgboost', 'ranger')
 
 engines_named <- .engines_valid %>% setNames(., .)
@@ -384,6 +391,15 @@ plot_rnks <- function(df_rnks, option = 'D', Threshold) {
 
 FeatureSelection3a <- function(data, col_y,plotType, Threshold) {
   
+  if (Threshold > dim(data)[2]){
+    
+    Threshold <- dim(data)[2]
+  }else{
+    
+    Threshold <- Threshold
+    
+  }
+  
   # 'glm' gets converted to 'lm' for regression in my code
   .engines_valid <- c('glm', 'glmnet', 'xgboost', 'ranger')
   
@@ -421,7 +437,8 @@ FeatureSelection3a <- function(data, col_y,plotType, Threshold) {
   FinalTable <- data.frame(Var = as.character(viz_diamonds_c_rnks[["data"]]$var), RankMean = viz_diamonds_c_rnks[["data"]]$rnk_mean) %>%
     unique() %>%
     mutate(NormMean = RankMean/dim(.)[1]) %>%
-    rename('Variable Name' = Var) 
+    rename('Variable Name' = Var) %>% 
+    arrange(NormMean)
   
   return(list( FinalTable, viz_diamonds_c_rnks))
   
