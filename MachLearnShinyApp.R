@@ -13,6 +13,7 @@
 
 #some issues with rlang?
 
+require(rmarkdown)
 require(shiny)
 require(shinydashboard)
 require(shinyWidgets)
