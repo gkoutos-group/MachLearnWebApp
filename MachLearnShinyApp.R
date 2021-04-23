@@ -13,6 +13,7 @@
 
 #some issues with rlang?
 
+require(knitr) #What is happening 
 require(rmarkdown)
 require(shiny)
 require(shinydashboard)
