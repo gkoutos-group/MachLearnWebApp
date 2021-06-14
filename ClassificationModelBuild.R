@@ -2,7 +2,7 @@
 
 MergeOutFuns <- function(g1, SelectedModels){
   
-  
+
   ################### 
   
   TrainingMods <- lapply(seq_along(1:length(g1)), function(i) {
@@ -492,11 +492,11 @@ iter_parallelFinal <- function(i, data, hh,method,Bootstraps,SelectedModels)  {
                                 .pred_Alive =
                                   predict(Wf,
                                           new_data = uni_train,
-                                          type = "prob")[[paste0(".pred_",levels(data$Label)[1])]],
+                                          type = "prob")[[paste0(".pred_",levels(as.factor(data$Label))[1])]],
                                 .pred_Dead =
                                   predict(Wf,
                                           new_data = uni_train,
-                                          type = "prob")[[paste0(".pred_",levels(data$Label)[2])]],
+                                          type = "prob")[[paste0(".pred_",levels(as.factor(data$Label))[2])]],
                                 .pred_Class =
                                   predict(Wf,
                                           new_data = uni_train) %>%
@@ -505,6 +505,14 @@ iter_parallelFinal <- function(i, data, hh,method,Bootstraps,SelectedModels)  {
                               ) %>%
                               mutate(.pred_Class = factor(.pred_Class))
                           })
+    
+    
+    newNames <- c(paste0(".pred_",levels(as.factor(data$Label))[1]), paste0(".pred_",levels(as.factor(data$Label))[2]))
+    oldNames <- names(final_metrics3[[1]][3:4]) 
+    secondArgument <- setNames(newNames,oldNames)
+    df2 <- lapply(names(final_metrics3), function(x) {plyr::rename(final_metrics3[[x]], secondArgument)})
+    names(df2) <- names(final_metrics3)
+    final_metrics3 <- df2
     
     
     final_metrics <-

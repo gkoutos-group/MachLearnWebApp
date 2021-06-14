@@ -1,4 +1,10 @@
+#have added is.character (671)
+# run all functions in one ( problem with modelling? )
+
+
 #Remember requires 3.6 R version
+
+#git reset --hard SHA (RESTORES TO LAST PART but then when pulling will get version from github automatically , cannot commit that reset?)
 
 #source("PipelineShiny11.R", chdir = T)
 #library("jsmodule")
@@ -43,6 +49,7 @@ require(magrittr)
 require(data.table)
 require(glmnet)
 require(ranger)
+require(extrafont)
 
 #update.packages(ask = FALSE, checkBuilt = TRUE)
 ########did somethinng with factors - if continous but levels not above x it is a factor##########
@@ -77,10 +84,10 @@ plan(multiprocess, workers = availableCores())
 
 ############
 
-#
-#data <- read.csv("Gastro.csv")[,-1] %>%
+
+#data <- read.csv("GastroMachLearn.csv")[,-1] %>%
 #  rename("Label" = "Sarcopenia")
-#selectedFeats <- FeatureSelection3(data) 
+#selectedFeats <- FeatureSelection3a(data,"Label","C", 10) 
 #KeyFeats1 <- unique(str_extract(as.character(selectedFeats[[1]]$`Variable Name`), "[^_]+"))
 #if (length(KeyFeats1) <= 4){
 #  KeyFeats <- KeyFeats1[1:length(KeyFeats1)]
@@ -93,7 +100,7 @@ plan(multiprocess, workers = availableCores())
 #hh <- unlist(lst2, recursive=FALSE)
 #hh <- hh[(Start[1]+1):length(hh)] 
 #
-#FeaturesS <- hh
+#FeaturesS <- hh[c(1:2)]
 #Boosted <- 2
 #Alg <- c(1,2)
 #print("runningHey2")
@@ -117,8 +124,14 @@ plan(multiprocess, workers = availableCores())
 #  
 #}
 #
-#MergeOut <- MergeOutFuns(g1, SelectedModels)
+#namesModels <- c("logit", "rf", "dt", "bt", "dtR")
 #
+#SelectedModels <- Alg
+#
+#SelMods <- namesModels[c(SelectedModels)]
+#
+#MergeOut <- MergeOutFuns(g1, SelectedModels)
+##
 #q3 <- MergeOut %>%
 #  filter(Type == "Test", Metrics == "AUROC") %>%
 #  select(-c(.metric, Type, ModelFinal)) %>%
@@ -172,7 +185,7 @@ plan(multiprocess, workers = availableCores())
 #
 #ggplot(pp1,  aes(reorder(New, Mean), b)) + 
 #  geom_tile(aes(fill = Mean),colour = "black",  width = 1, height = 0.00001) +   
-#  scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean AUC", n.breaks = 8) + 
+#  #scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean AUC", n.breaks = 8) + 
 #  facet_grid(NumVars~b, scales="free", space="free") +
 #  theme_linedraw() + 
 #  theme(axis.text = element_text(size = 10), 
@@ -205,9 +218,9 @@ plan(multiprocess, workers = availableCores())
 #  ) +
 #  scale_x_continuous(breaks = seq(0, max(MergeOut$Run) + 2, 1), expand = c(0, 0)) +
 #  labs(title = paste0("Bootstraps n=",  2)) +
-#  theme(text = element_text(size = 12)) + theme(
+#  theme(text = element_text(size = Size)) + theme(
 #    plot.title = element_text(size = Size, face = "bold"),
-#    legend.title = element_text(Size),
+#    legend.title = element_text(size =Size),
 #    legend.text = element_text(size = Size),
 #    strip.text = element_text(size = Size),
 #    panel.spacing = unit(0.5, "lines")
@@ -662,7 +675,7 @@ server = shinyServer(function( input, output,session) {
       
       
       
-    } else if(is.factor(readFile()[, r1])){
+    } else if(is.factor(readFile()[, r1]) | is.character(readFile()[, r1])){
       #| is.character(readFile()[, r1])
       #readFile()[,r1] <- as.factor(readFile()[,r1]) ##### added character and this line?
       var.n.levels <- length(levels(readFile()[, r1]))
@@ -1136,7 +1149,7 @@ server = shinyServer(function( input, output,session) {
         filter(.,Model == i) %>%
         ggplot( aes(reorder(New, Mean), b)) + 
         geom_tile(aes(fill = Mean),colour = "black",  width = 1, height = 0.00001) +   
-        scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean Metric", n.breaks = 8) + 
+        #scale_fill_stepsn(colours = topo.colors(20)[c( 2,8, 16)], name = "Mean Metric", n.breaks = 8) + 
         facet_grid(NumVars~b, scales="free", space="free") +
         theme_linedraw() + 
         theme(axis.text = element_text(size = 10), 
@@ -1219,7 +1232,7 @@ server = shinyServer(function( input, output,session) {
       labs(title = paste0("Bootstraps n=",  input$Boost)) +
       theme(text = element_text(size = 12)) + theme(
         plot.title = element_text(size = Size, face = "bold"),
-        legend.title = element_text(Size),
+        legend.title = element_text(size = Size),
         legend.text = element_text(size = Size),
         strip.text = element_text(size = Size),
         panel.spacing = unit(0.5, "lines")
