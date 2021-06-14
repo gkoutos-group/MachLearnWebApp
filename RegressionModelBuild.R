@@ -5,26 +5,25 @@
 #                        predictions = predictions, model = mod)
 
 
-
-data <- read.csv("GastroMachLearn.csv")[,-1] %>%
-  rename("Label" = "Age")
-selectedFeats <- FeatureSelection3a(data, "Label", "C", 10) 
-KeyFeats1 <- unique(str_extract(as.character(selectedFeats[[1]]$`Variable Name`), "[^_]+"))
-if (length(KeyFeats1) <= 4){
-  KeyFeats <- KeyFeats1[1:length(KeyFeats1)]
-}else{
-  KeyFeats <- KeyFeats1[1:4]
-}
-
-Start <- choose(length(KeyFeats), 1:length(KeyFeats))
-lst2 <- sapply(seq_along(KeyFeats), function(j) combn(KeyFeats, j, simplify= FALSE))
-hh <- unlist(lst2, recursive=FALSE)
-hh <- hh[(Start[1]+1):length(hh)] 
-
-FeaturesS <- hh
-Boosted <- 2
-Alg <- c(1,2)
-
+#data <- read.csv("GastroMachLearn.csv")[,-1] %>%
+#  rename("Label" = "Age")
+#selectedFeats <- FeatureSelection3a(data, "Label", "C", 10) 
+#KeyFeats1 <- unique(str_extract(as.character(selectedFeats[[1]]$`Variable Name`), "[^_]+"))
+#if (length(KeyFeats1) <= 4){
+#  KeyFeats <- KeyFeats1[1:length(KeyFeats1)]
+#}else{
+#  KeyFeats <- KeyFeats1[1:4]
+#}
+#
+#Start <- choose(length(KeyFeats), 1:length(KeyFeats))
+#lst2 <- sapply(seq_along(KeyFeats), function(j) combn(KeyFeats, j, simplify= FALSE))
+#hh <- unlist(lst2, recursive=FALSE)
+#hh <- hh[(Start[1]+1):length(hh)] 
+#
+#FeaturesS <- hh
+#Boosted <- 2
+#Alg <- c(1,2)
+#
 
 MergeFunsReg <- function(g1, SelectedModels){
   
