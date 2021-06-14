@@ -49,7 +49,6 @@ require(magrittr)
 require(data.table)
 require(glmnet)
 require(ranger)
-require(extrafont)
 
 #update.packages(ask = FALSE, checkBuilt = TRUE)
 ########did somethinng with factors - if continous but levels not above x it is a factor##########
