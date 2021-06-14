@@ -1,5 +1,9 @@
 #have added is.character (671)
 # run all functions in one ( problem with modelling? )
+#added is characterm line missing size in final plot, 
+#some libraries not reuqired 
+#no breaks in final plot stepsn.
+# these changes not mad ein bluebear
 
 
 #Remember requires 3.6 R version
