@@ -396,8 +396,8 @@ ui = shinyUI(
                              #downloadButton('downloadMT')
                              #downloadButton('downloadReport')
                              radioButtons('format', 'Obtain report with results', c( 'HTML'),
-                                          inline = TRUE)#,
-                             #downloadButton('downloadReport')
+                                          inline = TRUE),
+                             downloadButton('downloadReport')
                              
                      )
                      
@@ -1253,29 +1253,29 @@ server = shinyServer(function( input, output,session) {
   })
   
   
-  #output$downloadReport <- downloadHandler(
-  #  filename = function() {
-  #    paste('my-report', sep = '.', switch(
-  #      input$format,  HTML = 'html'
-  #    ))
-  #  },
-  #  
-  #  content = function(file) {
-  #    src <- normalizePath('reportMachLearn.Rmd')
-  #    
-  #    owd <- setwd(tempdir())
-  #    on.exit(setwd(owd))
-  #    file.copy(src, 'reportMachLearn.Rmd', overwrite = TRUE)
-  #    
-  #    library(rmarkdown)
-  #    out <- render('reportMachLearn.Rmd', switch(
-  #      input$format,
-  #      HTML = html_document()
-  #    ))
-  #    file.rename(out, file)
-  #  }
-  #)
-  #
+  output$downloadReport <- downloadHandler(
+    filename = function() {
+      paste('my-report', sep = '.', switch(
+        input$format,  HTML = 'html'
+      ))
+    },
+    
+    content = function(file) {
+      src <- normalizePath('reportMachLearn.Rmd')
+      
+      owd <- setwd(tempdir())
+      on.exit(setwd(owd))
+      file.copy(src, 'reportMachLearn.Rmd', overwrite = TRUE)
+      
+      library(rmarkdown)
+      out <- render('reportMachLearn.Rmd', switch(
+        input$format,
+        HTML = html_document()
+      ))
+      file.rename(out, file)
+    }
+  )
+  
   
   
   ##########################################################################################################
